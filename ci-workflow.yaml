@@ -52,7 +52,7 @@ spec:
             mountPath: /mnt/vol
     inputs:
       artifacts:
-        - git: { repo: 'https://github.com/viggin543/golang_service.git', revision: '36ffd2c'}
+        - git: { repo: 'https://github.com/viggin543/golang_service.git', revision: 'master'}
           name: code
           path: /go/src/github.com/viggin543/golang_service
 
