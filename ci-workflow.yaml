@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: deploy-fruits-service-
+spec:
+  entrypoint: ci-example
+  templates:
+  - name: ci-example
+    steps:
+      - - name: run-tests
+          template: test
+  - name: test
+    container:
+      image: golang:latest
+      command: [go]
+      args: ["test ./.."]
+      workingDir: /Users/domrevigor/personal_projects/reactive-code-with-quarkus/golang_service
+      resources:
+        limits:
+          memory: 32Mi
+          cpu: 100m
