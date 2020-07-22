@@ -15,8 +15,11 @@ spec:
   templates:
   - name: ci-example
     steps:
-      - - name: run-tests
+      -
+        - name: run-tests
           template: test
+        - name: build-image
+          template: build
   - name: test
     container:
       image: 'golang:latest'
@@ -43,16 +46,41 @@ spec:
           value: frutas
       - name: flyway
         image: boxfuse/flyway:latest-alpine
+        mirrorVolumeMounts: true
         command: [sh,-c]
-        args: ['
-        sleep 40;cp -R /mnt/vol/resources/db/migration/* /flyway/sql; flyway migrate -url=jdbc:mysql://127.0.0.1:3306/frutas?createDatabaseIfNotExist=true -schemas=frutas -user=root -password=password
-         ']
-        volumeMounts:
-          - name: workdir
-            mountPath: /mnt/vol
+        args:
+          - |
+           sleep 40
+           cp -R /mnt/vol/resources/db/migration/* /flyway/sql
+           flyway migrate -url=jdbc:mysql://127.0.0.1:3306/frutas?createDatabaseIfNotExist=true -schemas=frutas -user=root -password=password
+    inputs:
+      artifacts:
+        - git: { repo: 'https://github.com/viggin543/golang_service.git', revision: 'master'}
+          name: code
+          path: /go/src/github.com/viggin543/golang_service
+  - name: build
+    container:
+      image: 'argoproj/argo-events-ci-builder:1.0'
+      workingDir: /go/src/github.com/viggin543/golang_service
+      command: [sh,-c]
+      args:
+        - |
+         until docker ps; do sleep 3;done
+         docker build . -t golang_service
+      env:
+        - name: DOCKER_HOST
+          value: 127.0.0.1
+    sidecars:
+      - name: dnd
+        image: 'docker:17.10-dind'
+        mirrorVolumeMounts: true
+        securityContext:
+          privileged: true
     inputs:
       artifacts:
         - git: { repo: 'https://github.com/viggin543/golang_service.git', revision: 'master'}
           name: code
           path: /go/src/github.com/viggin543/golang_service
 
+# k get pods -n argo | grep -i deploy | awk '{print $1}' | xargs -I % kubectl -n argo delete pod %
+# cleanup script
