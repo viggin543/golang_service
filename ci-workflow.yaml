@@ -25,7 +25,12 @@ spec:
       image: 'golang:latest'
       command: [sh,-c]
       workingDir: /go/src/github.com/viggin543/golang_service
-      args: ["cp -R resources /mnt/vol ;sleep 60; go mod download; go test ./..."]
+      args:
+      - |
+        cp -R resources /mnt/vol
+        until cat /mnt/vol/flyway_done; do sleep 3; done
+        go mod download
+        go test ./...
       volumeMounts:
         - name: workdir
           mountPath: /mnt/vol
@@ -50,9 +55,10 @@ spec:
         command: [sh,-c]
         args:
           - |
-           sleep 40
+           until nc -v -z -v 127.0.0.1 3306; do sleep 3; done
            cp -R /mnt/vol/resources/db/migration/* /flyway/sql
            flyway migrate -url=jdbc:mysql://127.0.0.1:3306/frutas?createDatabaseIfNotExist=true -schemas=frutas -user=root -password=password
+           echo done > /mnt/vol/flyway_done
     inputs:
       artifacts:
         - git: { repo: 'https://github.com/viggin543/golang_service.git', revision: 'master'}
