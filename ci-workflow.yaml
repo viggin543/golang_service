@@ -4,6 +4,8 @@ metadata:
   generateName: deploy-fruits-service-
 spec:
   entrypoint: ci-example
+  podGC:
+    strategy: OnPodSuccess
   volumeClaimTemplates:
     - metadata:
         name: workdir
